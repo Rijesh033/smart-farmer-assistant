@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Farmer Assistant</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #eef7e9;
+            margin: 0;
+            padding: 30px 15px;
+            color: #263528;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: auto;
+            padding: 30px;
+            background: white;
+            border-radius: 18px;
+            box-shadow: 0 5px 20px #0002;
+        }
+
+        h1,
+        h2 {
+            color: #237b38;
+            text-align: center;
+        }
+
+        label {
+            display: block;
+            margin-top: 18px;
+            font-weight: bold;
+        }
+
+        select,
+        input,
+        button {
+            width: 100%;
+            padding: 12px;
+            margin-top: 8px;
+            box-sizing: border-box;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+
+        select,
+        input {
+            border: 1px solid #ccc;
+            background: white;
+        }
+
+        button {
+            background: #237b38;
+            color: white;
+            border: none;
+            cursor: pointer;
+            margin-top: 22px;
+        }
+
+        button:hover {
+            background: #185d29;
+        }
+
+        #result {
+            margin-top: 25px;
+            padding: 15px;
+            border-radius: 10px;
+            background: #f1f8ed;
+            line-height: 1.7;
+            overflow-wrap: anywhere;
+        }
+
+        li {
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🌱 Smart Farmer Assistant</h1>
+        <p style="text-align:center">
+            Simple technology for smarter farming.
+        </p>
+
+        <label for="crop">Choose your crop</label>
+        <select id="crop">
+            <option value="Rice">Rice</option>
+            <option value="Maize">Maize</option>
+            <option value="Tomato">Tomato</option>
+            <option value="Wheat">Wheat</option>
+        </select>
+
+        <label for="location">Farm location</label>
+        <input id="location" type="text" placeholder="e.g. Udupi">
+
+        <label for="soil">Soil type</label>
+        <select id="soil">
+            <option value="Loamy">Loamy</option>
+            <option value="Sandy">Sandy</option>
+            <option value="Clay">Clay</option>
+        </select>
+
+        <label for="moisture">Soil moisture</label>
+        <select id="moisture">
+            <option value="Moderate">Moderate</option>
+            <option value="Dry">Dry</option>
+            <option value="Wet">Wet</option>
+        </select>
+
+        <button onclick="getRecommendations()">
+            Get Farming Recommendations
+        </button>
+
+        <div id="result" aria-live="polite">
+            Enter your farm details to get started.
+        </div>
+    </div>
+
+    <script>
+        async function getRecommendations() {
+            const crop = document.getElementById("crop").value;
+            const soil = document.getElementById("soil").value;
+            const moisture = document.getElementById("moisture").value;
+            const location = document.getElementById("location").value.trim();
+            const result = document.getElementById("result");
+
+            if (!location) {
+                result.textContent = "Please enter your farm location.";
+                return;
+            }
+
+            result.textContent = "Getting farming recommendations...";
+
+            try {
+                // Send farm information to the Flask backend
+                const response = await fetch(
+                    "/api/recommendations",
+                    {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({
+                            crop: crop,
+                            soil: soil,
+                            moisture: moisture
+                        })
+                    }
+                );
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || "Request failed.");
+                }
+
+                result.replaceChildren();
+
+                const heading = document.createElement("h2");
+                heading.textContent = "🌾 Your Farming Guidance";
+                result.appendChild(heading);
+
+                const locationText = document.createElement("p");
+                locationText.textContent = "Farm location: " + location;
+                result.appendChild(locationText);
+
+                const cropText = document.createElement("p");
+                cropText.textContent = "Crop: " + data.crop;
+                result.appendChild(cropText);
+
+                const list = document.createElement("ul");
+
+                data.recommendations.forEach(function (tip) {
+                    const item = document.createElement("li");
+                    item.textContent = tip;
+                    list.appendChild(item);
+                });
+
+                result.appendChild(list);
+
+                const note = document.createElement("p");
+                note.textContent = data.note;
+                result.appendChild(note);
+
+            } catch (error) {
+                result.textContent =
+                    "Error: " + error.message +
+                    ". Check that the Flask server is running.";
+            }
+        }
+    </script>
+</body>
+
+</html>
